@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -9,6 +10,7 @@ public class mecanicasJugador : MonoBehaviour
 
     public GameObject finPartida;
     public float velocidad = 5;
+    [SerializeField] float velocidadSprint = 15;
     public float fuerzaSalto = 5;
 
     [SerializeField] float sensibilidadRaton = 2.0F;
@@ -42,7 +44,18 @@ public class mecanicasJugador : MonoBehaviour
     {
         float adelante = Input.GetAxis("Vertical") * velocidad;
         float lateral = Input.GetAxis("Horizontal") * velocidad;
-        rb.velocity = transform.rotation * new Vector3(lateral, rb.velocity.y, adelante);
+
+        if (Input.GetKey("left shift"))
+        {
+            velocidad = velocidadSprint;
+            rb.velocity = transform.rotation * new Vector3(lateral, rb.velocity.y, adelante);
+        }
+        else
+        {
+            velocidad = 5;
+            rb.velocity = transform.rotation * new Vector3(lateral, rb.velocity.y, adelante);
+            Debug.Log(velocidad);
+        }
     }
 
     private void ControlSalto()
