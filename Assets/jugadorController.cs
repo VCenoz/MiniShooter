@@ -5,25 +5,22 @@ using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.HID;
-
+using UnityEngine.UI;
 public class jugadorController : MonoBehaviour
 {
     public GameObject finPartida;
-    [SerializeField] float velocidadSprint = 15;
+    public Image staminaBarra;
+    private Coroutine recargar;
+    [SerializeField] float stamina, maxStamina, costeSprint, tasaRecargo;
     [SerializeField] float sensibilidadRaton = 2.0F;
-    private float giroVertical;
-    private float giroHorizontal;
+    private float giroHorizontal, giroVertical, maxGradosGiro = 30;
     private Camera camara;
-    [SerializeField] float maxGradosGiro = 30;
 
     private CharacterController controller;
     private Vector3 playerVelocity;
     private bool groundedPlayer;
-    private float playerSpeed = 2.0f;
-    [SerializeField] float jumpHeight = 10.0f;
-    [SerializeField] float gravityValue = -20.81f;
+    private float playerSpeed = 2.0f, jumpHeight = 10.0f, gravityValue = -20.81f, pushPower = 2.0F, velocidadSprint = 15;
 
-    public float pushPower = 2.0F;
 
     private void Start()
     {
@@ -66,7 +63,21 @@ public class jugadorController : MonoBehaviour
 
         if (Input.GetKey("left shift"))
         {
-            playerSpeed = velocidadSprint;
+            if(stamina > 0)
+            {
+                playerSpeed = velocidadSprint;
+                stamina -= costeSprint * Time.deltaTime;
+                if (stamina < 0) stamina = 0;
+                staminaBarra.fillAmount = stamina / maxStamina;
+
+                if (recargar != null) StopCoroutine(recargar);
+                recargar = StartCoroutine(RecargarStamina());
+            }
+            else
+            {
+                playerSpeed = 2.0f;
+            }
+
         }
         else
         {
@@ -142,6 +153,18 @@ public class jugadorController : MonoBehaviour
             transform.position = Vector3.zero;
         }
 
+    }
+
+    private IEnumerator RecargarStamina()
+    {
+        yield return new WaitForSeconds(1f);
+        while(stamina < maxStamina)
+        {
+            stamina += tasaRecargo / 10f;
+            if (stamina > maxStamina) stamina = maxStamina;
+            staminaBarra.fillAmount = stamina / maxStamina;
+            yield return new WaitForSeconds(1f);
+        }
     }
 
 }
