@@ -40,8 +40,6 @@ public class controllerConAnimaciones : MonoBehaviour
 
     void Update()
     {
-        RotacionPersonaje();
-
         groundedPlayer = controller.isGrounded;
 
 
@@ -50,12 +48,15 @@ public class controllerConAnimaciones : MonoBehaviour
         Vector3 move = Input.GetAxis("Horizontal") * transform.right + Input.GetAxis("Vertical") * transform.forward;
         controller.Move(move * Time.deltaTime * playerSpeed);
 
+        transform.Rotate(0, Input.GetAxis("Horizontal"), 0);
 
-        //Debug.Log(playerVelocity);
 
         if (groundedPlayer && playerVelocity.y < 0)
         {
+            animator.SetBool("Jumping", false);
+            animator.SetBool("Falling", true);
             playerVelocity.y = -0.5f;
+            animator.SetBool("Falling", false);
         }
 
         playerVelocity.y += gravityValue * Time.deltaTime;
@@ -64,6 +65,7 @@ public class controllerConAnimaciones : MonoBehaviour
         // Makes the player jump
         if (Input.GetKeyDown(KeyCode.Space) && groundedPlayer)
         {
+            animator.SetBool("Jumping", true);
             playerVelocity.y += Mathf.Sqrt(jumpHeight * -2.0f * gravityValue);
 
         }
@@ -79,17 +81,6 @@ public class controllerConAnimaciones : MonoBehaviour
             animator.SetBool("Running", false);
         }
 
-
-    }
-
-
-    private void RotacionPersonaje()
-    {
-        giroHorizontal = sensibilidadRaton * Input.GetAxis("Mouse X");
-        transform.Rotate(0, giroHorizontal, 0);
-        giroVertical += sensibilidadRaton * Input.GetAxis("Mouse Y");
-        giroVertical = Mathf.Clamp(giroVertical, -maxGradosGiro, maxGradosGiro);
-        //camara.transform.localRotation = Quaternion.Euler(-giroVertical, 0, 0);
     }
 
 }
