@@ -16,7 +16,7 @@ public class controllerShrek : MonoBehaviour
     [SerializeField] float sensibilidadRaton = 2.0F;
     private float giroHorizontal, giroVertical, maxGradosGiro = 30;
     public Camera camara;
-    Vector3[] posicionesCamara;
+    [SerializeField]  Vector3[] posicionesCamara;
     int indicePosicionCamara;
 
     public CharacterController controller;
@@ -43,9 +43,12 @@ public class controllerShrek : MonoBehaviour
         groundedPlayer = controller.isGrounded;
 
         animator.SetFloat("Walking", Input.GetAxis("Vertical"));
+        animator.SetFloat("Movimiento Frontal", Input.GetAxis("Vertical") * Time.deltaTime * playerSpeed);
+        animator.SetFloat("Movimiento Lateral", Input.GetAxis("Horizontal") * Time.deltaTime * playerSpeed);
 
         Vector3 move = Input.GetAxis("Horizontal") * transform.right + Input.GetAxis("Vertical") * transform.forward;
         controller.Move(move * Time.deltaTime * playerSpeed);
+
         transform.Rotate(0, Input.GetAxis("Horizontal"), 0) ;
 
         if (groundedPlayer && playerVelocity.y < 0)
@@ -103,6 +106,13 @@ public class controllerShrek : MonoBehaviour
             {
                 indicePosicionCamara++;
             }
+        }
+
+        if (Input.GetKey("v"))
+        {
+            animator.SetBool("Crouching", true);
+
+
         }
     }
 
