@@ -22,7 +22,7 @@ public class controllerShrek : MonoBehaviour
     public CharacterController controller;
     private Vector3 playerVelocity;
     private bool groundedPlayer;
-    private float playerSpeed = 2.0f, jumpHeight = 10.0f, gravityValue = -20.81f, pushPower = 2.0F, velocidadSprint = 15;
+    private float playerSpeed = 3.0f, jumpHeight = 10.0f, gravityValue = -20.81f, pushPower = 2.0F, velocidadSprint = 9;
 
     Animator animator;
 
@@ -39,17 +39,18 @@ public class controllerShrek : MonoBehaviour
     void Update()
     {
         DisparoRayCast();
+        RotacionPersonaje();
 
         groundedPlayer = controller.isGrounded;
 
-        animator.SetFloat("Walking", Input.GetAxis("Vertical"));
-        animator.SetFloat("Movimiento Frontal", Input.GetAxis("Vertical") * Time.deltaTime * playerSpeed);
-        animator.SetFloat("Movimiento Lateral", Input.GetAxis("Horizontal") * Time.deltaTime * playerSpeed);
+        //animator.SetFloat("Walking", Input.GetAxis("Vertical"));
+        animator.SetFloat("Movimiento Frontal", Input.GetAxis("Vertical") * playerSpeed); //saco la velocidad del personaje asi
+
+        animator.SetFloat("Movimiento Lateral", Input.GetAxis("Horizontal") * playerSpeed);
 
         Vector3 move = Input.GetAxis("Horizontal") * transform.right + Input.GetAxis("Vertical") * transform.forward;
         controller.Move(move * Time.deltaTime * playerSpeed);
 
-        transform.Rotate(0, Input.GetAxis("Horizontal"), 0) ;
 
         if (groundedPlayer && playerVelocity.y < 0)
         {
@@ -111,8 +112,14 @@ public class controllerShrek : MonoBehaviour
         if (Input.GetKey("v"))
         {
             animator.SetBool("Crouching", true);
-
-
+            controller.height = 1.6f;
+            controller.center = new Vector3(0f,0.97f,0f);
+        }
+        else if (animator.GetBool("Crouching"))
+        {
+            animator.SetBool("Crouching", false);
+            controller.height = 2.51f;
+            controller.center = new Vector3(0f, 1.39f, 0f);
         }
     }
 
@@ -153,6 +160,15 @@ public class controllerShrek : MonoBehaviour
 
             }
         }
+    }
+
+    private void RotacionPersonaje()
+    {
+        giroHorizontal = sensibilidadRaton * Input.GetAxis("Mouse X");
+        transform.Rotate(0, giroHorizontal, 0);
+        giroVertical += sensibilidadRaton * Input.GetAxis("Mouse Y");
+        giroVertical = Mathf.Clamp(giroVertical, -maxGradosGiro, maxGradosGiro);
+        camara.transform.localRotation = Quaternion.Euler(-giroVertical, 0, 0);
     }
 
 
