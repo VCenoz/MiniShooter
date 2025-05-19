@@ -9,14 +9,24 @@ public class persecucionEnemigo : MonoBehaviour
     [SerializeField] float velocidad = 3f;
     [SerializeField] float distanciaPerseguir = 15f;
     [SerializeField] float distanciaAtaque = 0.05f;
+    [SerializeField] float health, maxHealth = 3f;
+    [SerializeField] float regeneracion = 1f;
 
     public GameObject jugador;
-
+    [SerializeField] floatingHealthbar healthbar; //consigo una referencia al script para manejar la barra de vida
     Animator animator;
+
+    private void Awake()
+    {
+        healthbar = GetComponentInChildren<floatingHealthbar>();
+    }
 
     void Start()
     {
+        health = maxHealth;
+        healthbar.UpdateHealthBar(health, maxHealth); 
         animator = GetComponent<Animator>();
+        StartCoroutine(RecargarVida()); 
     }
 
     void Update()
@@ -33,9 +43,9 @@ public class persecucionEnemigo : MonoBehaviour
         else if (distancia <= distanciaPerseguir)
         {
             // persigue
-            
 
-           
+
+
             Vector3 posicionJugador = new Vector3(jugador.transform.position.x, transform.position.y, jugador.transform.position.z);
             transform.position = Vector3.MoveTowards(transform.position, posicionJugador, velocidad * Time.deltaTime);
             Vector3 direccionMovimiento = (posicionJugador - transform.position).normalized; //para la rotacion de enemigo
@@ -57,5 +67,41 @@ public class persecucionEnemigo : MonoBehaviour
         transform.position = respawn;
         GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
         velocidad = velocidad * 1.3f;
+    }
+    public void RecibirDaño(float cantidad) //creo un metodo para recibir daño del raycast del jugador
+    {
+        health -= cantidad; //le quito vida al enemigo
+        if (health < 0) health = 0; //controlo que no baje de 0
+
+        //actualizo la barra de vida llamando al metodo de la clase flatingHealthbar, que calcula en base a la vida que le paso
+        healthbar.UpdateHealthBar(health, maxHealth);
+
+        if (health <= 0)
+        {
+            StartCoroutine(MorirYRespawnear()); //llamo a una corrutina para esperar  unos segundos a la animacion antes de respawnear
+        }
+    }
+
+    private IEnumerator MorirYRespawnear()
+    {
+        animator.SetBool("Death", true);
+        yield return new WaitForSeconds(5f); // Espera 2 segundos para que termine la animación
+
+        respawnear();
+
+        animator.SetBool("Death", false);
+        health = maxHealth;//volvemos la vida a full
+        healthbar.UpdateHealthBar(health, maxHealth);//volvemos a full la barra tambien
+    }
+
+    private IEnumerator RecargarVida()
+    {
+        yield return new WaitForSeconds(1f);
+        while (health < maxHealth)
+        {
+            health += regeneracion;
+            healthbar.UpdateHealthBar(health, maxHealth);
+            yield return new WaitForSeconds(1f);
+        }
     }
 }

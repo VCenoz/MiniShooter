@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -16,7 +17,7 @@ public class controllerShrek : MonoBehaviour
     [SerializeField] float sensibilidadRaton = 2.0F;
     private float giroHorizontal, giroVertical, maxGradosGiro = 30;
     public Camera camara;
-    [SerializeField]  Vector3[] posicionesCamara;
+    [SerializeField] Vector3[] posicionesCamara;
     int indicePosicionCamara;
 
     public CharacterController controller;
@@ -113,23 +114,30 @@ public class controllerShrek : MonoBehaviour
         {
             animator.SetBool("Crouching", true);
             controller.height = 1.6f;
-            controller.center = new Vector3(0f,0.97f,0f);
+            controller.center = new Vector3(0f, 0.97f, 0f);
         }
+
         else if (animator.GetBool("Crouching"))
         {
-            animator.SetBool("Crouching", false);
-            controller.height = 2.51f;
-            controller.center = new Vector3(0f, 1.39f, 0f);
+            if (mePuedoLevantar())
+            {
+                animator.SetBool("Crouching", false);
+                controller.height = 2.51f;
+                controller.center = new Vector3(0f, 1.39f, 0f);
+            }
         }
     }
 
-
-
-
+    private bool mePuedoLevantar() //compruebo con un raycast desde el centro del personaje hacia arriba si toca contra algo 
+    {
+        float distanciaMinima = 1f;
+        Vector3 origen = transform.position + Vector3.up * controller.height / 2f; // desde el centro del personaje
+        return !Physics.Raycast(origen, Vector3.up, distanciaMinima);
+    }
 
     private void DisparoRayCast()
     {
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0)) // dispara le rayo una unica vez, no seguida, como seria con GetMouseButton
         {
 
             Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -142,7 +150,7 @@ public class controllerShrek : MonoBehaviour
                 if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemigo"))
                 {
 
-                    hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().respawnear();
+                    hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().RecibirDaño(1f); //ahora en lugar de respawnear, llamo al metodo publico del enemigo y le quito una cantidad de daño
                 }
 
                 //Debug.Log(hitInfo.collider.gameObject.name);
@@ -160,6 +168,39 @@ public class controllerShrek : MonoBehaviour
 
             }
         }
+    }
+
+    private void CrouchRayCast()
+    {
+
+        Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+        //Debug.DrawRay(r.origin, r.direction * 100, Color.magenta);
+        RaycastHit hitInfo;
+
+        if (Physics.Raycast(r, out hitInfo))
+        {
+            //Debug.Log(hitInfo.collider.gameObject.name);
+            if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemigo"))
+            {
+
+                hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().respawnear();
+            }
+
+            //Debug.Log(hitInfo.collider.gameObject.name);
+            if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Disparable"))
+            {
+                Rigidbody body = hitInfo.collider.attachedRigidbody;
+                if (body == null || body.isKinematic)
+                    return;
+
+                Vector3 direction = body.transform.position - transform.position;
+                body.AddForceAtPosition(direction.normalized * 5f, hitInfo.point);
+
+            }
+
+
+        }
+
     }
 
     private void RotacionPersonaje()
