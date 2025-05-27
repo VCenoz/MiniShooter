@@ -11,6 +11,7 @@ public class persecucionEnemigo : MonoBehaviour
     [SerializeField] float distanciaAtaque = 0.05f;
     [SerializeField] float health, maxHealth = 3f;
     [SerializeField] float regeneracion = 1f;
+    private bool regenerando = false;
 
     public GameObject jugador;
     [SerializeField] floatingHealthbar healthbar; //consigo una referencia al script para manejar la barra de vida
@@ -68,19 +69,6 @@ public class persecucionEnemigo : MonoBehaviour
         GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
         velocidad = velocidad * 1.3f;
     }
-    public void RecibirDaño(float cantidad) //creo un metodo para recibir daño del raycast del jugador
-    {
-        health -= cantidad; //le quito vida al enemigo
-        if (health < 0) health = 0; //controlo que no baje de 0
-
-        //actualizo la barra de vida llamando al metodo de la clase flatingHealthbar, que calcula en base a la vida que le paso
-        healthbar.UpdateHealthBar(health, maxHealth);
-
-        if (health <= 0)
-        {
-            StartCoroutine(MorirYRespawnear()); //llamo a una corrutina para esperar  unos segundos a la animacion antes de respawnear
-        }
-    }
 
     private IEnumerator MorirYRespawnear()
     {
@@ -94,14 +82,39 @@ public class persecucionEnemigo : MonoBehaviour
         healthbar.UpdateHealthBar(health, maxHealth);//volvemos a full la barra tambien
     }
 
+    public void RecibirDaño(float cantidad)
+    {
+        health -= cantidad;
+        if (health < 0) health = 0;
+
+        healthbar.UpdateHealthBar(health, maxHealth);
+
+        if (health <= 0)
+        {
+            StopCoroutine(RecargarVida()); // detener si estaba regenerando
+            regenerando = false;
+            StartCoroutine(MorirYRespawnear());
+        }
+        else if (!regenerando) // reiniciar regeneración si no estaba corriendo
+        {
+            StartCoroutine(RecargarVida());
+        }
+    }
+
     private IEnumerator RecargarVida()
     {
-        yield return new WaitForSeconds(1f);
+        regenerando = true;
+        yield return new WaitForSeconds(2f);
+
         while (health < maxHealth)
         {
             health += regeneracion;
+            if (health > maxHealth) health = maxHealth;
             healthbar.UpdateHealthBar(health, maxHealth);
             yield return new WaitForSeconds(1f);
         }
+
+        regenerando = false;
     }
+
 }
