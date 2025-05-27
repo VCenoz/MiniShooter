@@ -9,6 +9,7 @@ public class controllerShrekNewInput : MonoBehaviour
 {
     public GameObject finPartida;
     public Image staminaBarra;
+    public Configuraciones configuraciones;
     [SerializeField] float stamina, maxStamina, costeSprint, tasaRecargo;
     [SerializeField] float sensibilidadRaton = 15F;
     private float giroHorizontal, giroVertical, maxGradosGiro = 30;
@@ -108,7 +109,7 @@ public class controllerShrekNewInput : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0)) //inputAction WAS PRESSED THIS FRAME
         {
-            DisparoRayCast();
+             StartCoroutine(DisparoRayCast());
         }
 
         input.ResetFrameInputs();
@@ -131,26 +132,38 @@ public class controllerShrekNewInput : MonoBehaviour
         return !Physics.Raycast(origen, Vector3.up, distanciaMinima);
     }
 
-    private void DisparoRayCast()
+    private IEnumerator DisparoRayCast()
     {
-        Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-        Debug.DrawRay(r.origin, r.direction * 100, Color.magenta);
-        if (Physics.Raycast(r, out RaycastHit hitInfo))
+        if (configuraciones.balas > 0)
         {
-            if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemigo"))
+            configuraciones.balas -= 1; //gasto una bala
+
+            Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+            Debug.DrawRay(r.origin, r.direction * 100, Color.magenta);
+            if (Physics.Raycast(r, out RaycastHit hitInfo))
             {
-                hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().RecibirDaño(1f);
-            }
-            else if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Disparable"))
-            {
-                Rigidbody body = hitInfo.collider.attachedRigidbody;
-                if (body != null && !body.isKinematic)
+                if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemigo"))
                 {
-                    Vector3 direction = body.transform.position - transform.position;
-                    body.AddForceAtPosition(direction.normalized * 5f, hitInfo.point);
+                    hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().RecibirDaño(1f);
+                }
+                else if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Disparable"))
+                {
+                    Rigidbody body = hitInfo.collider.attachedRigidbody;
+                    if (body != null && !body.isKinematic)
+                    {
+                        Vector3 direction = body.transform.position - transform.position;
+                        body.AddForceAtPosition(direction.normalized * 5f, hitInfo.point);
+                    }
                 }
             }
         }
+        
+        else if (configuraciones.balas <= 0)
+        {
+            yield return new WaitForSeconds(configuraciones.tiempoRecarga);
+        }
+        
+
     }
 
     private IEnumerator RecargarStamina()

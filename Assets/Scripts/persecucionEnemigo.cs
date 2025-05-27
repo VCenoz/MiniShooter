@@ -11,7 +11,6 @@ public class persecucionEnemigo : MonoBehaviour
     [SerializeField] float distanciaAtaque = 0.05f;
     [SerializeField] float health, maxHealth = 3f;
     [SerializeField] float regeneracion = 1f;
-    private bool regenerando = false;
 
     public GameObject jugador;
     [SerializeField] floatingHealthbar healthbar; //consigo una referencia al script para manejar la barra de vida
@@ -27,7 +26,6 @@ public class persecucionEnemigo : MonoBehaviour
         health = maxHealth;
         healthbar.UpdateHealthBar(health, maxHealth); 
         animator = GetComponent<Animator>();
-        StartCoroutine(RecargarVida()); 
     }
 
     void Update()
@@ -84,37 +82,43 @@ public class persecucionEnemigo : MonoBehaviour
 
     public void RecibirDaño(float cantidad)
     {
+        Debug.Log("he recibido daño, se para la corrutina de regeneracion de vida");
+        StopCoroutine(RecargarVida());
+        Debug.Log("vida antes: " + health);
         health -= cantidad;
+        Debug.Log("vida ahora: " + health);
         if (health < 0) health = 0;
-
         healthbar.UpdateHealthBar(health, maxHealth);
 
         if (health <= 0)
         {
-            StopCoroutine(RecargarVida()); // detener si estaba regenerando
-            regenerando = false;
+            Debug.Log("vida es 0, muero");
             StartCoroutine(MorirYRespawnear());
         }
-        else if (!regenerando) // reiniciar regeneración si no estaba corriendo
+        else
         {
+            Debug.Log("herido pero vida no es cero, comienzo la regeneracion");
             StartCoroutine(RecargarVida());
         }
     }
 
     private IEnumerator RecargarVida()
     {
-        regenerando = true;
+        Debug.Log("comienza corrutina, espero 2 segundos antes de regenerar");
         yield return new WaitForSeconds(2f);
 
         while (health < maxHealth)
         {
+            Debug.Log("entro en bucle, la vida aun no se ha llenado");
+            Debug.Log("vida antes: " + health);
             health += regeneracion;
+            Debug.Log("vida ahora: " + health);
             if (health > maxHealth) health = maxHealth;
             healthbar.UpdateHealthBar(health, maxHealth);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(2f);
         }
 
-        regenerando = false;
+        Debug.Log("termina bucle, la vida se ha llenado, termina la corrutina");
     }
 
 }

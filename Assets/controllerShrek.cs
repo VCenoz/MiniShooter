@@ -12,6 +12,7 @@ public class controllerShrek : MonoBehaviour
 {
     public GameObject finPartida;
     public Image staminaBarra;
+    public Configuraciones configuraciones;
     private Coroutine recargar;
     [SerializeField] float stamina, maxStamina, costeSprint, tasaRecargo;
     [SerializeField] float sensibilidadRaton = 2.0F;
@@ -139,34 +140,38 @@ public class controllerShrek : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0)) // dispara le rayo una unica vez, no seguida, como seria con GetMouseButton
         {
+            configuraciones.balas -= 1; //gasto una bala
 
-            Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
-            Debug.DrawRay(r.origin, r.direction * 100, Color.magenta);
-            RaycastHit hitInfo;
-
-            if (Physics.Raycast(r, out hitInfo))
+            if (configuraciones.balas > 0)
             {
-                //Debug.Log(hitInfo.collider.gameObject.name);
-                if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemigo"))
+                Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
+                Debug.DrawRay(r.origin, r.direction * 100, Color.magenta);
+                RaycastHit hitInfo;
+
+                if (Physics.Raycast(r, out hitInfo))
                 {
+                    //Debug.Log(hitInfo.collider.gameObject.name);
+                    if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Enemigo"))
+                    {
 
-                    hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().RecibirDaño(1f); //ahora en lugar de respawnear, llamo al metodo publico del enemigo y le quito una cantidad de daño
+                        hitInfo.collider.gameObject.GetComponent<persecucionEnemigo>().RecibirDaño(1f); //ahora en lugar de respawnear, llamo al metodo publico del enemigo y le quito una cantidad de daño
+                    }
+
+                    //Debug.Log(hitInfo.collider.gameObject.name);
+                    if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Disparable"))
+                    {
+                        Rigidbody body = hitInfo.collider.attachedRigidbody;
+                        if (body == null || body.isKinematic)
+                            return;
+
+                        Vector3 direction = body.transform.position - transform.position;
+                        body.AddForceAtPosition(direction.normalized * 5f, hitInfo.point);
+
+                    }
+
                 }
-
-                //Debug.Log(hitInfo.collider.gameObject.name);
-                if (hitInfo.collider.gameObject.layer == LayerMask.NameToLayer("Disparable"))
-                {
-                    Rigidbody body = hitInfo.collider.attachedRigidbody;
-                    if (body == null || body.isKinematic)
-                        return;
-
-                    Vector3 direction = body.transform.position - transform.position;
-                    body.AddForceAtPosition(direction.normalized * 5f, hitInfo.point);
-
-                }
-
-
             }
+
         }
     }
 
