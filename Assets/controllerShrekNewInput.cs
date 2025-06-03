@@ -17,7 +17,7 @@ public class controllerShrekNewInput : MonoBehaviour
     private float giroHorizontal, giroVertical, maxGradosGiro = 30;
     [SerializeField] float health, maxHealth = 3f;
     public Camera camara;
-    [SerializeField] Vector3[] posicionesCamara;
+    [SerializeField] Transform[] posicionesCamara;
     int indicePosicionCamara;
 
     private CharacterController controller;
@@ -27,6 +27,8 @@ public class controllerShrekNewInput : MonoBehaviour
     private Coroutine recargar;
     private Animator animator;
     private InputHandlerShrek input;
+    private bool estaMuerto = false;
+
 
     private void Start()
     {
@@ -34,12 +36,6 @@ public class controllerShrekNewInput : MonoBehaviour
         animator = GetComponent<Animator>();
         input = GetComponent<InputHandlerShrek>();
 
-        posicionesCamara = new Vector3[]
-        {
-            new Vector3(0f, 0.91f, -3.4f),
-            new Vector3(0.01f, 0.91f, 0.32f),
-            new Vector3(0.01f, 2.91f, -8.01f)
-        };
         indicePosicionCamara = 0;
 
         Cursor.lockState = CursorLockMode.Locked;
@@ -48,6 +44,8 @@ public class controllerShrekNewInput : MonoBehaviour
 
     private void Update()
     {
+        if (estaMuerto) return; //si esta muerto no hace nada
+
         RotacionPersonaje();
 
         groundedPlayer = controller.isGrounded;
@@ -93,7 +91,7 @@ public class controllerShrekNewInput : MonoBehaviour
 
         if (input.cambiarCamara)
         {
-            camara.transform.localPosition = posicionesCamara[indicePosicionCamara];
+            camara.transform.localPosition = posicionesCamara[indicePosicionCamara].localPosition;
             indicePosicionCamara = (indicePosicionCamara + 1) % posicionesCamara.Length;
         }
 
@@ -198,6 +196,7 @@ public class controllerShrekNewInput : MonoBehaviour
     }
     private IEnumerator Morir()
     {
+        estaMuerto = true; // bloqueamos el movimiento en el updatw
         animator.SetBool("Death", true);
         yield return new WaitForSeconds(5f); // Espera 2 segundos para que termine la animación
         animator.SetBool("Death", false);

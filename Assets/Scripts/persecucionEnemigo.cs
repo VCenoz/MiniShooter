@@ -9,7 +9,7 @@ public class persecucionEnemigo : MonoBehaviour
     [SerializeField] float coordenadaZrespawn = 24f;
     [SerializeField] float velocidad = 3f;
     [SerializeField] float distanciaPerseguir = 15f;
-    [SerializeField] float distanciaAtaque = 0.05f;
+    [SerializeField] float distanciaAtaque = 0.5f;
     [SerializeField] float health, maxHealth = 3f;
     [SerializeField] float regeneracion = 1f;
     [SerializeField] BoxCollider triggerEspada;
@@ -19,6 +19,8 @@ public class persecucionEnemigo : MonoBehaviour
 
     Animator animator;
     Rigidbody rb;
+
+    private Coroutine regeneracionActiva;
 
     private void Awake()
     {
@@ -38,22 +40,27 @@ public class persecucionEnemigo : MonoBehaviour
 
     void FixedUpdate()
     {
-        float distancia = Vector3.Distance(transform.position, jugador.transform.position);
+        Vector3 posEnemigo = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+        Vector3 posJugador = new Vector3(jugador.transform.position.x, transform.position.y, jugador.transform.position.z);
+        float distancia = Vector3.Distance(posEnemigo, posJugador);
 
         if (distancia <= distanciaAtaque)
         {
+            // Forzamos un paso más hacia el jugador antes de atacar
+            Vector3 direccion = (posJugador - transform.position).normalized;
+            direccion.y = 0f; // por si acaso
+            rb.MovePosition(rb.position + direccion * velocidad * Time.fixedDeltaTime * 0.5f); // medio paso
+
             animator.SetBool("Perseguir", false);
             animator.SetBool("Ataque", true);
         }
         else if (distancia <= distanciaPerseguir)
         {
-            Vector3 posicionJugador = new Vector3(jugador.transform.position.x, transform.position.y, jugador.transform.position.z);
-            Vector3 direccionMovimiento = (posicionJugador - transform.position).normalized;
+            Vector3 direccionMovimiento = (posJugador - transform.position).normalized;
+            direccionMovimiento.y = 0f;
 
-            // Movimiento 
             rb.MovePosition(rb.position + direccionMovimiento * velocidad * Time.fixedDeltaTime);
 
-            // Rotacion
             if (direccionMovimiento != Vector3.zero)
                 transform.rotation = Quaternion.LookRotation(direccionMovimiento);
 
@@ -62,11 +69,11 @@ public class persecucionEnemigo : MonoBehaviour
         }
         else
         {
-            //idle
             animator.SetBool("Perseguir", false);
             animator.SetBool("Ataque", false);
         }
     }
+
 
     public void respawnear()
     {
@@ -80,20 +87,32 @@ public class persecucionEnemigo : MonoBehaviour
     {
         audioEnemigoMuere.Play();
         animator.SetBool("Death", true);
-        yield return new WaitForSeconds(5f); // Espera 2 segundos para que termine la animación
+
+        rb.constraints = RigidbodyConstraints.FreezeAll;
+
+        yield return new WaitForSeconds(5f); // tiempo de espera para la animación de muerte
 
         respawnear();
 
+        rb.constraints = RigidbodyConstraints.FreezeRotation;
+
         animator.SetBool("Death", false);
-        health = maxHealth;//volvemos la vida a full
-        healthbar.UpdateHealthBar(health, maxHealth);//volvemos a full la barra tambien
+        health = maxHealth;
+        healthbar.UpdateHealthBar(health, maxHealth);
     }
 
     public void RecibirDaño(float cantidad)
     {
         audioEnemigoHerido.Play();
         Debug.Log("he recibido daño, se para la corrutina de regeneracion de vida");
-        StopCoroutine(RecargarVida());
+
+        // Detiene la regeneración anterior correctamente si está activa
+        if (regeneracionActiva != null)
+        {
+            StopCoroutine(regeneracionActiva);
+            regeneracionActiva = null;
+        }
+
         Debug.Log("vida antes: " + health);
         health -= cantidad;
         Debug.Log("vida ahora: " + health);
@@ -108,9 +127,10 @@ public class persecucionEnemigo : MonoBehaviour
         else
         {
             Debug.Log("herido pero vida no es cero, comienzo la regeneracion");
-            StartCoroutine(RecargarVida());
+            regeneracionActiva = StartCoroutine(RecargarVida());
         }
     }
+
 
     private IEnumerator RecargarVida()
     {
