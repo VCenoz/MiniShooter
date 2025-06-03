@@ -1,18 +1,21 @@
 using System.Collections;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(CharacterController))]
 public class controllerShrekNewInput : MonoBehaviour
 {
     public GameObject finPartida;
+    [SerializeField] AudioSource audioShrek;
+    [SerializeField] AudioSource audioShoot;
     public Image staminaBarra;
     public Configuraciones configuraciones;
     [SerializeField] float stamina, maxStamina, costeSprint, tasaRecargo;
     [SerializeField] float sensibilidadRaton = 15F;
     private float giroHorizontal, giroVertical, maxGradosGiro = 30;
+    [SerializeField] float health, maxHealth = 3f;
     public Camera camara;
     [SerializeField] Vector3[] posicionesCamara;
     int indicePosicionCamara;
@@ -20,7 +23,7 @@ public class controllerShrekNewInput : MonoBehaviour
     private CharacterController controller;
     private Vector3 playerVelocity;
     private bool groundedPlayer;
-    private float playerSpeed = 3.0f, jumpHeight = 10.0f, gravityValue = -20.81f, pushPower = 2.0F, velocidadSprint = 9;
+    private float playerSpeed = 3.0f, jumpHeight = 4.0f, gravityValue = -20.81f, pushPower = 2.0F, velocidadSprint = 9;
     private Coroutine recargar;
     private Animator animator;
     private InputHandlerShrek input;
@@ -136,6 +139,7 @@ public class controllerShrekNewInput : MonoBehaviour
     {
         if (configuraciones.balas > 0)
         {
+            audioShoot.Play();
             configuraciones.balas -= 1; //gasto una bala
 
             Ray r = Camera.main.ScreenPointToRay(Mouse.current.position.ReadValue());
@@ -176,5 +180,42 @@ public class controllerShrekNewInput : MonoBehaviour
             staminaBarra.fillAmount = stamina / maxStamina;
             yield return new WaitForSeconds(1f);
         }
+    }
+
+    public void RecibirDaño(float cantidad)
+    {
+        audioShrek.Play();
+        Debug.Log("vida antes: " + health);
+        health -= cantidad;
+        Debug.Log("vida ahora: " + health);
+        if (health < 0) health = 0;
+
+        if (health <= 0)
+        {
+            Debug.Log("vida es 0, muero");
+            StartCoroutine(Morir());
+        }
+    }
+    private IEnumerator Morir()
+    {
+        animator.SetBool("Death", true);
+        yield return new WaitForSeconds(5f); // Espera 2 segundos para que termine la animación
+        animator.SetBool("Death", false);
+
+        //panel fin partida
+        finPartida.SetActive(true); //activo el panel para que se muestre sobre la pantalla
+        Cursor.lockState = CursorLockMode.Confined; //cambio el cursor de locked al centro de la pantalla a confined a toda la ventana, para poder pulsar botones
+        Cursor.visible = true; //vuelvo a hacer visible el cursor
+
+    }
+
+    public void Reintentar()
+    {
+        SceneManager.LoadScene("MiniShooter", LoadSceneMode.Single);
+    }
+
+    public void MenuPrincipal()
+    {
+        SceneManager.LoadScene("menuPrincipal", LoadSceneMode.Single);
     }
 }

@@ -1,9 +1,10 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class persecucionEnemigo : MonoBehaviour
 {
+    [SerializeField] AudioSource audioEnemigoHerido;
+    [SerializeField] AudioSource audioEnemigoMuere;
     [SerializeField] float coordenadaXrespawn = 24f;
     [SerializeField] float coordenadaZrespawn = 24f;
     [SerializeField] float velocidad = 3f;
@@ -11,50 +12,57 @@ public class persecucionEnemigo : MonoBehaviour
     [SerializeField] float distanciaAtaque = 0.05f;
     [SerializeField] float health, maxHealth = 3f;
     [SerializeField] float regeneracion = 1f;
+    [SerializeField] BoxCollider triggerEspada;
 
     public GameObject jugador;
-    [SerializeField] floatingHealthbar healthbar; //consigo una referencia al script para manejar la barra de vida
+    [SerializeField] floatingHealthbar healthbar;
+
     Animator animator;
+    Rigidbody rb;
 
     private void Awake()
     {
         healthbar = GetComponentInChildren<floatingHealthbar>();
+        rb = GetComponent<Rigidbody>();
     }
 
     void Start()
     {
         health = maxHealth;
-        healthbar.UpdateHealthBar(health, maxHealth); 
+        healthbar.UpdateHealthBar(health, maxHealth);
         animator = GetComponent<Animator>();
+
+        // Aseguramos que el Rigidbody no rote ni se descontrole
+        rb.freezeRotation = true;
     }
 
-    void Update()
+    void FixedUpdate()
     {
         float distancia = Vector3.Distance(transform.position, jugador.transform.position);
 
         if (distancia <= distanciaAtaque)
         {
-            // ataca
             animator.SetBool("Perseguir", false);
             animator.SetBool("Ataque", true);
-            // .....
         }
         else if (distancia <= distanciaPerseguir)
         {
-            // persigue
-
-
-
             Vector3 posicionJugador = new Vector3(jugador.transform.position.x, transform.position.y, jugador.transform.position.z);
-            transform.position = Vector3.MoveTowards(transform.position, posicionJugador, velocidad * Time.deltaTime);
-            Vector3 direccionMovimiento = (posicionJugador - transform.position).normalized; //para la rotacion de enemigo
-            transform.rotation = Quaternion.LookRotation(direccionMovimiento); //cambia la rotacion del enemigo 
+            Vector3 direccionMovimiento = (posicionJugador - transform.position).normalized;
+
+            // Movimiento 
+            rb.MovePosition(rb.position + direccionMovimiento * velocidad * Time.fixedDeltaTime);
+
+            // Rotacion
+            if (direccionMovimiento != Vector3.zero)
+                transform.rotation = Quaternion.LookRotation(direccionMovimiento);
+
             animator.SetBool("Perseguir", true);
             animator.SetBool("Ataque", false);
         }
         else
         {
-            // idle
+            //idle
             animator.SetBool("Perseguir", false);
             animator.SetBool("Ataque", false);
         }
@@ -63,13 +71,14 @@ public class persecucionEnemigo : MonoBehaviour
     public void respawnear()
     {
         Vector3 respawn = new Vector3(Random.Range(-coordenadaXrespawn, coordenadaXrespawn), 0.5f, Random.Range(-coordenadaZrespawn, coordenadaZrespawn));
-        transform.position = respawn;
+        rb.position = respawn; // usamos rb en lugar de transform
         GetComponent<Renderer>().material.color = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-        velocidad = velocidad * 1.3f;
+        velocidad *= 1.3f;
     }
 
     private IEnumerator MorirYRespawnear()
     {
+        audioEnemigoMuere.Play();
         animator.SetBool("Death", true);
         yield return new WaitForSeconds(5f); // Espera 2 segundos para que termine la animación
 
@@ -82,6 +91,7 @@ public class persecucionEnemigo : MonoBehaviour
 
     public void RecibirDaño(float cantidad)
     {
+        audioEnemigoHerido.Play();
         Debug.Log("he recibido daño, se para la corrutina de regeneracion de vida");
         StopCoroutine(RecargarVida());
         Debug.Log("vida antes: " + health);
@@ -121,4 +131,5 @@ public class persecucionEnemigo : MonoBehaviour
         Debug.Log("termina bucle, la vida se ha llenado, termina la corrutina");
     }
 
+    
 }

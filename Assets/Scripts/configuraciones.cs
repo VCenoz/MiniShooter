@@ -6,12 +6,14 @@ using UnityEngine;
 
 public class Configuraciones : MonoBehaviour
 {
+    [SerializeField] AudioSource audioReload;
     private bool puedeDisparar;
     public int balasTotales = 500;
     public int balas = 10;
     public float disparosPorSegundo = 3f;
-    public float tiempoRecarga = 3f;
+    public float tiempoRecarga = 2f;
     private Coroutine recargar;
+    private bool recargando = false;
 
     public TextMeshProUGUI balasTexto;
     // Start is called before the first frame update
@@ -34,13 +36,19 @@ public class Configuraciones : MonoBehaviour
 
     IEnumerator Recargar()
     {
-        if (balasTotales > 0)
+        if (balasTotales > 0 && !recargando)
         {
+            recargando = true;
+            audioReload.Play();
+            Debug.Log("recargando...");
+            yield return new WaitForSeconds(tiempoRecarga);
+
             balasTotales -= 10;
             balas = 10;
             Debug.Log("comenzando recarga");
             balasTexto.text = "Balas: " + balas;
-            yield return null;
+            recargando = false;
+
 
         }
     }
